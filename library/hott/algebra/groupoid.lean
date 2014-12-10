@@ -4,7 +4,7 @@
 -- Ported from Coq HoTT
 import .precategory.basic .precategory.morphism .group
 
-open path function prod sigma truncation morphism nat path_algebra unit
+open path function prod sigma truncation morphism nat path_algebra unit precategory
 
 structure foo (A : Type) := (bsp : A)
 
@@ -19,7 +19,6 @@ instance [persistent] all_iso
 --set_option pp.universes true
 --set_option pp.implicit true
 universe variable l
-open precategory
 definition path_groupoid (A : Type.{l})
     (H : is_trunc (nat.zero .+1) A) : groupoid.{l l} A :=
 groupoid.mk
@@ -61,10 +60,26 @@ begin
     intro f, exact (morphism.inverse_compose f),
 end
 
+-- TODO: This is probably wrong
+open equiv is_equiv
+definition group_equiv {A : Type.{l}} [fx : funext]
+  : group A ≃ Σ (G : groupoid.{l l} unit), @hom unit G ⋆ ⋆ ≈ A :=
+sorry
+
+end groupoid
+
+-- In most cases we want to restrict the notion of groupoids to
+-- the ones with a _set_ of objects.
+structure set_groupoid [class] (ob : Type) extends groupoid ob :=
+(carrier_hset : is_hset ob)
+
+namespace set_groupoid
+
 -- Conversely we can turn each group into a groupoid on the unit type
-definition of_group (A : Type.{l}) [G : group A] : groupoid.{l l} unit :=
+universe variable l
+definition of_group (A : Type.{l}) [G : group A] : set_groupoid.{l l} unit :=
 begin
-  fapply groupoid.mk,
+  fapply set_groupoid.mk,
     intros, exact A,
     intros, apply (@group.carrier_hset A G),
     intros (a, b, c, g, h), exact (@group.mul A G g h),
@@ -75,13 +90,7 @@ begin
     intros, apply is_iso.mk,
       apply mul_left_inv,
       apply mul_right_inv,
+    apply trunc_succ, apply trunc_succ, apply unit_contr,
 end
 
--- TODO: This is probably wrong
-open equiv is_equiv
-definition group_equiv {A : Type.{l}} [fx : funext]
-  : group A ≃ Σ (G : groupoid.{l l} unit), @hom unit G ⋆ ⋆ ≈ A :=
-sorry
-
-
-end groupoid
+end set_groupoid
