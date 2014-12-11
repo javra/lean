@@ -93,4 +93,36 @@ begin
     apply trunc_succ, apply trunc_succ, apply unit_contr,
 end
 
+definition path_set_groupoid (A : Type.{l}) [ASet : is_hset A]
+  : set_groupoid.{l l} A :=
+set_groupoid.mk
+    (λ (a b : A), a ≈ b)
+    (λ (a b : A), have ish : is_hset (a ≈ b), from succ_is_trunc nat.zero a b, ish)
+    (λ (a b c : A) (p : b ≈ c) (q : a ≈ b), q ⬝ p)
+    (λ (a : A), idpath a)
+    (λ (a b c d : A) (p : c ≈ d) (q : b ≈ c) (r : a ≈ b), concat_pp_p r q p)
+    (λ (a b : A) (p : a ≈ b), concat_p1 p)
+    (λ (a b : A) (p : a ≈ b), concat_1p p)
+    (λ (a b : A) (p : a ≈ b), @is_iso.mk A _ a b p (path.inverse p)
+    !concat_pV !concat_Vp)
+    ASet
+
+set_option pp.universes true
+definition fundamental_set_groupoid (S : Type) [SSet : is_hset S]
+  (X : Type.{l}) [X1T : is_trunc (nat.zero .+1) X]
+  (iX : S → X)
+  : set_groupoid.{l l} S :=
+set_groupoid.mk
+    (λ (a b : S), iX a ≈ iX b)
+    (λ (a b : S), have ish : is_hset (iX a ≈ iX b), from succ_is_trunc nat.zero _ _, ish)
+    (λ (a b c : S) (p : iX b ≈ iX c) (q : iX a ≈ iX b), q ⬝ p)
+    (λ (a : S), idpath (iX a))
+    (λ (a b c d : S) (p : iX c ≈ iX d) (q : iX b ≈ iX c) (r : iX a ≈ iX b), concat_pp_p r q p)
+    (λ (a b : S) (p : iX a ≈ iX b), concat_p1 p)
+    (λ (a b : S) (p : iX a ≈ iX b), concat_1p p)
+    (λ (a b : S) (p : iX a ≈ iX b), @is_iso.mk S _ a b p (path.inverse p)
+    !concat_pV !concat_Vp)
+    SSet
+
+
 end set_groupoid
