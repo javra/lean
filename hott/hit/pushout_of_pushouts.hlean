@@ -24,7 +24,7 @@ section
     (H₁₃ : f₀₃ ∘ f₁₂ ~ f₁₄ ∘ f₂₃) (H₁₃' : f₁₄ ∘ f₂₃ ~ f₀₃ ∘ f₁₂)
     (H₃₁ : f₃₀ ∘ f₂₁ ~ f₄₁ ∘ f₃₂) (H₃₁' : f₄₁ ∘ f₃₂ ~ f₃₀ ∘ f₂₁)
     (H₃₃ : f₄₃ ∘ f₃₂ ~ f₃₄ ∘ f₂₃) (H₃₃' : f₃₄ ∘ f₂₃ ~ f₄₃ ∘ f₃₂)
-    (H₁₁'' : Π x, (H₁₁ x) = (H₁₁' x)⁻¹)
+    (H₁₁'' : Π x, (H₁₁ x)⁻¹ = (H₁₁' x))
     (H₁₃'' : Π x, (H₁₃ x) = (H₁₃' x)⁻¹)
     (H₃₁'' : Π x, (H₃₁ x) = (H₃₁' x)⁻¹)
     (H₃₃'' : Π x, (H₃₃ x) = (H₃₃' x)⁻¹)
@@ -49,46 +49,76 @@ section
   local abbreviation Avh := pushout f₁p f₃p
   local abbreviation Ahv := pushout fp₁ fp₃
 
-  private definition of_pushouts_fun_aux1 (a b : A₄₄) (p : a = b) :
-    ap (pushout.elim (inl ∘ inr) (inr ∘ inr) (λ x, @glue _ _ _ fp₁ fp₃ (inr x))) (ap inr p⁻¹)
-    = ap inr (ap inr p⁻¹) :=
-  by cases p; reflexivity
-
-  private definition of_pushouts_fun_aux2 (a b : A₀₄) (p : a = b) :
-    ap (pushout.elim (inl ∘ inl) (inr ∘ inl) (λ x, @glue _ _ _ fp₁ fp₃ (inl x))) (ap inr p⁻¹)
-    = ap inr (ap inl p⁻¹) :=
-  by cases p; reflexivity
-
   private definition of_pushout_A₀pfun : A₀p → Ahv :=
   λ a, pushout.elim (inl ∘ inl) (inr ∘ inl) (λ x, glue (inl x)) a
 
   private definition of_pushout_A₄pfun : A₄p → Ahv :=
   λ a, pushout.elim (inl ∘ inr) (inr ∘ inr) (λ x, glue (inr x)) a
 
+  private definition of_pushouts_fun_aux1 (a b : A₄₄) (p : a = b) :
+    ap of_pushout_A₄pfun (ap inr p⁻¹) = ap inr (ap inr p⁻¹) :=
+  by cases p; reflexivity
+
+  private definition of_pushouts_fun_aux2 (a b : A₀₄) (p : a = b) :
+    ap of_pushout_A₀pfun (ap inr p⁻¹) = ap inr (ap inl p⁻¹) :=
+  by cases p; reflexivity
+
+  private definition of_pushouts_fun_aux3 (a b) (p : a = b) :
+    ap of_pushout_A₄pfun (ap inl p) = ap inl (ap inr p) :=
+  by cases p; reflexivity
+
+  private definition of_pushouts_fun_aux4 (a b) (p : a = b) :
+    ap of_pushout_A₀pfun (ap inl p) = ap inl (ap inl p) :=
+  by cases p; reflexivity
+
+  private definition of_pushout_square1 (x : A₂₂) :
+    square (ap inr (ap (pushout.functor f₁₂ f₃₂ f₁₄ f₃₄ f₂₃ f₀₃ f₄₃ H₁₃ H₃₃) (glue x)))
+      (ap inr (glue (f₂₃ x))) (ap of_pushout_A₀pfun (ap inr (H₁₃' x)⁻¹))
+      (ap of_pushout_A₄pfun (ap inr (H₃₃' x)⁻¹)) :=
+  begin
+    refine ap (ap inr) !elim_glue ⬝pv _, 
+    refine !of_pushouts_fun_aux2 ⬝ph _ ⬝hp !of_pushouts_fun_aux1⁻¹,
+    apply aps inr, apply move_top_of_right, apply move_top_of_left',
+    apply eq_hconcat, apply ap (λ x, _ ⬝ ap inl x), apply !H₁₃''⁻¹,
+    apply eq_hconcat, apply con.left_inv, 
+    refine _ ⬝hp ap (λ x, _ ⬝ ap inr x) !H₃₃'',
+    refine _ ⬝hp ap (λ x, x ⬝ _) !ap_inv⁻¹,
+    refine _ ⬝hp !con.left_inv⁻¹, apply vrfl
+  end
+
+  private definition of_pushout_square2 (x) :
+    square (ap inl (glue (f₂₁ x)))
+      (ap inl (ap (pushout.functor f₁₂ f₃₂ f₁₀ f₃₀ f₂₁ f₀₁ f₄₁ H₁₁' H₃₁') (glue x)))
+      (ap of_pushout_A₀pfun (ap inl (H₁₁ x))) (ap of_pushout_A₄pfun (ap inl (H₃₁ x))) :=
+  begin
+    refine _ ⬝vp ap (ap inl) !elim_glue⁻¹,
+    refine  !of_pushouts_fun_aux4 ⬝ph _ ⬝hp !of_pushouts_fun_aux3⁻¹,
+    apply aps inl, apply move_bot_of_right', apply move_bot_of_left,
+    apply eq_hconcat, apply ap (λ x, _ ⬝ ap inl x), apply !H₁₁''⁻¹,
+    apply eq_hconcat, apply concat, apply ap (λ x, _ ⬝ x) !ap_inv, apply con.right_inv,
+    apply hconcat_eq, rotate 1, 
+    { apply inverse, apply concat, apply ap (λ x, _ ⬝ (ap inr x)⁻¹), apply !H₃₁''⁻¹, 
+      apply con.right_inv },
+    apply vrfl
+  end
+
   private definition of_pushout_fun_square (x : A₂₂) : 
     square (ap inl (glue (f₂₁ x))) (ap inr (glue (f₂₃ x)))
     (ap (λ a, of_pushout_A₀pfun (pushout.functor f₂₁ f₂₃ f₀₁ f₀₃ f₁₂ f₁₀ f₁₄ H₁₁ H₁₃' a)) (glue x))
     (ap (λ a, of_pushout_A₄pfun (pushout.functor f₂₁ f₂₃ f₄₁ f₄₃ f₃₂ f₃₀ f₃₄ H₃₁ H₃₃' a)) (glue x)) :=
   begin
-    refine !(ap_compose (λ x, pushout.elim _ _ _ x)) ⬝ph _,
-    refine _ ⬝hp !(ap_compose (λ x, pushout.elim _ _ _ x))⁻¹, 
+    refine !(ap_compose of_pushout_A₀pfun) ⬝ph _,
+    refine _ ⬝hp !(ap_compose of_pushout_A₄pfun)⁻¹, 
     refine ap !ap !elim_glue ⬝ph _ ⬝hp ap !ap !elim_glue⁻¹,
     refine !ap_con ⬝ph _ ⬝hp !ap_con⁻¹,
     refine ap (λ x, x ⬝ _) !ap_con ⬝ph _ ⬝hp ap (λ x, x ⬝ _) !ap_con⁻¹,
     refine ap (λ x, _ ⬝ x ⬝ _) !elim_glue ⬝ph _ ⬝hp ap (λ x, _ ⬝ x ⬝ _) !elim_glue⁻¹,
     fapply vconcat, fapply vconcat, rotate 1, 
     { apply transpose, apply pushout.glue_square, apply glue },
-    { refine ap (ap inr) !elim_glue ⬝pv _, 
-      refine !of_pushouts_fun_aux2 ⬝ph _ ⬝hp !of_pushouts_fun_aux1⁻¹,
-      apply aps inr, apply move_top_of_right, apply move_top_of_left',
-      apply eq_hconcat, apply ap (λ x, _ ⬝ ap inl x), apply !H₁₃''⁻¹,
-      apply eq_hconcat, apply con.left_inv, 
-      refine _ ⬝hp ap (λ x, _ ⬝ ap inr x) !H₃₃'',
-      refine _ ⬝hp ap (λ x, x ⬝ _) !ap_inv⁻¹,
-      refine _ ⬝hp !con.left_inv⁻¹, apply vrfl },
+    { apply of_pushout_square1 },
+    { apply of_pushout_square2 }
   end
 
-  --set_option pp.implicit true
   protected definition of_pushouts_fun : Avh → Ahv :=
   begin
     intro x, induction x,
@@ -100,7 +130,7 @@ section
     { apply eq_pathover, apply of_pushout_fun_square }
   end
 end
-
+exit
 section
   parameters {A₀₀ A₀₂ A₀₄ A₂₀ A₂₂ A₂₄ A₄₀ A₄₂ A₄₄ : Type}
     {f₀₁ : A₀₂ → A₀₀} {f₀₃ : A₀₂ → A₀₄}
@@ -122,11 +152,11 @@ section
   local abbreviation f := pushout.of_pushouts_fun H₁₁ H₁₁' H₁₃ H₁₃' H₃₁ H₃₁' H₃₃ H₃₃' 
     (λ x, !inv_inv⁻¹) (λ x, !inv_inv⁻¹) (λ x, !inv_inv⁻¹) (λ x, !inv_inv⁻¹)
   local abbreviation f' := pushout.of_pushouts_fun H₁₁' H₁₁ H₃₁ H₃₁' H₁₃ H₁₃' H₃₃' H₃₃
-    _ _ _ _
+    (λ x, idp) (λ x, !inv_inv⁻¹) (λ x, !inv_inv⁻¹) (λ x, idp)
 
   protected definition of_pushouts_fun_is_involution : f' ∘ f ~ id :=
   sorry
-
+/-
 end
 
 section
@@ -144,7 +174,7 @@ section
   local abbreviation H₁₁' := λ x, (H₁₁ x)⁻¹
   local abbreviation H₃₃' := λ x, (H₃₃ x)⁻¹
   local abbreviation f := pushout.of_pushouts_fun H₁₁ H₁₁' H₁₃ H₃₁ H₃₃ H₃₃'
-  local abbreviation f' := pushout.of_pushouts_fun H₁₁' H₁₁ H₃₁ H₁₃ H₃₃' H₃₃
+  local abbreviation f' := pushout.of_pushouts_fun H₁₁' H₁₁ H₃₁ H₁₃ H₃₃' H₃₃-/
 
   definition of_pushouts_fun_is_equiv : is_equiv f :=
   begin
